@@ -1,0 +1,3 @@
+(library
+ (name semant)
+ (libraries asts util))

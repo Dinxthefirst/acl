@@ -1,0 +1,6 @@
+_build/
+*.out
+*.conflicts
+*.automaton
+.vscode
+.direnv

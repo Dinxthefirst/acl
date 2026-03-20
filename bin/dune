@@ -1,0 +1,14 @@
+(executable
+ (public_name acl_sem)
+ (name sem)
+ (libraries lib))
+
+(install
+ (section bin)
+ (files
+  (sem.exe as sem)))
+
+(env
+ (dev
+  (flags
+   (:standard -warn-error -K))))
