@@ -33,14 +33,18 @@ let rec apply_expr (sub : subst) (expr : Tast.expr) : Tast.expr =
   | Abs { x; e; tp } -> Abs { x; e = apply_expr sub e; tp = apply sub tp }
   | App { e1; e2; tp } ->
     App { e1 = apply_expr sub e1; e2 = apply_expr sub e2; tp = apply sub tp }
-  | Let { id; vs; e1; e2; tp } ->
+  | Let { id; e1; e2; tp } ->
     Let
       { id
-      ; vs
       ; e1 = apply_expr sub e1
       ; e2 = apply_expr sub e2
       ; tp = apply sub tp
       }
+  | BinOp { l; op; r; tp } ->
+    BinOp
+      { l = apply_expr sub l; op; r = apply_expr sub r; tp = apply sub tp }
+  | UnOp { op; expr; tp } ->
+    UnOp { op; expr = apply_expr sub expr; tp = apply sub tp }
 ;;
 
 module TyVarSet = Set.Make (struct

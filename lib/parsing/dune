@@ -8,5 +8,6 @@
  (modules parser)
  (flags
   --dump
+  --strict
   ;--trace
   ))

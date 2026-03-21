@@ -21,6 +21,25 @@ type typeScheme =
       ; tps : typeScheme
       }
 
+type binop =
+  | Plus
+  | Minus
+  | Mul
+  | Div
+  | Rem
+  | And
+  | Or
+  | Eq
+  | Neq
+  | Lt
+  | Le
+  | Gt
+  | Ge
+
+type unop =
+  | Neg
+  | Not
+
 type expr =
   | Var of
       { id : ident
@@ -40,11 +59,22 @@ type expr =
       }
   | Let of
       { id : ident
-      ; vs : ident list
       ; e1 : expr
       ; e2 : expr
       ; tp : tau
       }
+  | BinOp of
+      { l : expr
+      ; op : binop
+      ; r : expr
+      ; tp : tau
+      }
+  | UnOp of
+      { op : unop
+      ; expr : expr
+      ; tp : tau
+      }
+
 (* | LetRec of { id : ident ; vs : ident list ; e1 : expr ; e2 : expr ; tp :
    mu t1. t2} *)
 

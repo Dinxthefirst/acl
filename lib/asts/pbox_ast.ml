@@ -22,6 +22,29 @@ let type_info tp =
     (string_of_type tp)
 ;;
 
+let binop_to_node op =
+  match op with
+  | Tast.Plus -> make_binop "Plus"
+  | Tast.Minus -> make_binop "Minus"
+  | Tast.Mul -> make_binop "Mul"
+  | Tast.Div -> make_binop "Div"
+  | Tast.Rem -> make_binop "Rem"
+  | Tast.And -> make_binop "And"
+  | Tast.Or -> make_binop "Or"
+  | Tast.Eq -> make_binop "Eq"
+  | Tast.Neq -> make_binop "Neq"
+  | Tast.Lt -> make_binop "Lt"
+  | Tast.Le -> make_binop "Le"
+  | Tast.Gt -> make_binop "Gt"
+  | Tast.Ge -> make_binop "Ge"
+;;
+
+let unop_to_node op =
+  match op with
+  | Tast.Neg -> make_binop "Neg"
+  | Tast.Not -> make_binop "Lnot"
+;;
+
 let rec expr_derivation_node (e : Tast.program) =
   match e with
   | Int { int } ->
@@ -55,6 +78,18 @@ let rec expr_derivation_node (e : Tast.program) =
       ; expr_derivation_node e2
       ; type_derivation_node tp
       ]
+  | BinOp { l; op; r; tp } ->
+    PBox.tree
+      (make_expr "BinOp")
+      [ expr_derivation_node l
+      ; binop_to_node op
+      ; expr_derivation_node r
+      ; type_derivation_node tp
+      ]
+  | UnOp { op; expr; tp } ->
+    PBox.tree
+      (make_expr "UnOp")
+      [ unop_to_node op; expr_derivation_node expr; type_derivation_node tp ]
 
 and lval_derivation_node ident =
   PBox.hlist ~bars:false [ make_expr "Var: "; ident_info ident ]

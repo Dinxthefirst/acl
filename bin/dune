@@ -1,4 +1,9 @@
 (executable
+ (public_name acl_run)
+ (name run)
+ (libraries lib))
+
+(executable
  (public_name acl_sem)
  (name sem)
  (libraries lib))
@@ -6,6 +11,7 @@
 (install
  (section bin)
  (files
+  (run.exe as run)
   (sem.exe as sem)))
 
 (env

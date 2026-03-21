@@ -10,7 +10,10 @@
 %token <string> IDENT
 %token <bool> BOOL_LIT
 
-%token EQ
+%token PLUS MINUS MUL DIV REM
+%token NOT OR AND 
+%token EQ NEQ LT LE GT GE
+
 
 %token LPAREN "(" RPAREN ")"
 
@@ -20,16 +23,44 @@
 
 
 %start <program> prog
-%type <expr> app atomic expr
+%type <expr> app atomic expr 
 %type <ident list> list_ident
+
+%nonassoc LET
+%right ARROW
+%left OR
+%left AND
+%nonassoc EQ NEQ LT LE GT GE
+%left PLUS MINUS
+%left MUL DIV REM
+%right UNOP
 
 
 %%
 
 %inline ident: IDENT {Ident {id = $1}}
 
+%inline binop:
+| PLUS {Plus}
+| MINUS {Minus}
+| MUL {Mul}
+| DIV {Div}
+| REM {Rem}
+| NEQ {Neq} 
+| EQ {Eq}
+| LT {Lt}
+| LE {Le}
+| GT {Gt}
+| GE {Ge}
+| OR {Or}
+| AND {And}
+
+%inline unop:
+| MINUS {Neg}
+| NOT {Not}
+
 list_ident:
-  | /* empty */ {[]}
+  | {[]}
   | id = ident ids = list_ident {id :: ids}
 
 atomic:
@@ -44,7 +75,9 @@ app:
 
 expr: 
 | x = ident "->" e = expr {Abs {x; e}}
-| LET id = ident vs = list_ident EQ e1 = expr IN e2 = expr {Let {id; vs; e1; e2}}
+| LET id = ident vs = list_ident EQ e1 = expr IN e2 = expr %prec LET {Let {id; vs; e1; e2}}
+| l = expr op = binop r = expr {BinOp {l; op; r}}
+| op = unop expr = expr %prec UNOP {UnOp {op; expr}}
 | app {$1}
 
 prog:

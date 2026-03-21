@@ -13,7 +13,20 @@ rule token = parse
 | eof {EOF}
 | [' ' '\t'] {token lexbuf}
 | '\n' | "\r\n" {Lexing.new_line lexbuf; token lexbuf}
+| '+'   {PLUS}
+| '-'   {MINUS}
+| '*'   {MUL}
+| '/'   {DIV}
+| "mod" {REM}
+| "<>" {NEQ}
 | "=" {EQ}
+| '<' {LT}
+| "<=" {LE}
+| '>' {GT}
+| ">=" {GE}
+| "not" {NOT}
+| "or" {OR}
+| "and" {AND}
 | '(' {LPAREN}
 | ')' {RPAREN}
 | "let" {LET}

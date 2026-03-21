@@ -20,6 +20,24 @@ let rec string_of_scheme (scheme : Tast.typeScheme) : string =
   | TPoly { var; tps } -> string_of_tyvar var ^ "." ^ string_of_scheme tps
 ;;
 
+let string_of_binop = function
+  | Tast.Plus -> "+"
+  | Tast.Minus -> "-"
+  | Tast.Mul -> "*"
+  | Tast.Div -> "-"
+  | Tast.Rem -> "%"
+  | Tast.Or -> "or"
+  | Tast.And -> "and"
+  | Tast.Eq -> "=="
+  | Tast.Neq -> "!="
+  | Tast.Lt -> "<"
+  | Tast.Le -> "<="
+  | Tast.Gt -> ">"
+  | Tast.Ge -> ">="
+;;
+
+let string_of_unop = function Tast.Neg -> "-" | Tast.Not -> "not "
+
 let rec string_of_expr (texpr : Tast.expr) : string =
   match texpr with
   | Int { int } -> Int64.to_string int
@@ -35,12 +53,10 @@ let rec string_of_expr (texpr : Tast.expr) : string =
     ^ " : "
     ^ string_of_type tp
     ^ ")"
-  | Let { id = Ident { id }; vs; e1; e2; tp } ->
+  | Let { id = Ident { id }; e1; e2; tp } ->
     "("
     ^ "let "
     ^ id
-    ^ " "
-    ^ String.concat " " (List.map (fun (Tast.Ident { id }) -> id) vs)
     ^ " : "
     ^ string_of_type tp
     ^ " = "
@@ -48,4 +64,14 @@ let rec string_of_expr (texpr : Tast.expr) : string =
     ^ " in "
     ^ string_of_expr e2
     ^ ")"
+  | BinOp { l; op; r; _ } ->
+    "("
+    ^ string_of_expr l
+    ^ " "
+    ^ string_of_binop op
+    ^ " "
+    ^ string_of_expr r
+    ^ ")"
+  | UnOp { op; expr; _ } ->
+    "(" ^ string_of_unop op ^ string_of_expr expr ^ ")"
 ;;

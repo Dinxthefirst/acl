@@ -42,6 +42,24 @@ and occurs (tau : Tast.tau) (alpha : Tast.tyVar) : bool =
   | TFunc { intp; outtp } -> occurs intp alpha || occurs outtp alpha
 ;;
 
+let infer_bop = function
+  | Ast.Plus -> Tast.Plus
+  | Ast.Minus -> Tast.Minus
+  | Ast.Mul -> Tast.Mul
+  | Ast.Div -> Tast.Div
+  | Ast.Rem -> Tast.Rem
+  | Ast.And -> Tast.And
+  | Ast.Or -> Tast.Or
+  | Ast.Eq -> Tast.Eq
+  | Ast.Neq -> Tast.Neq
+  | Ast.Lt -> Tast.Lt
+  | Ast.Le -> Tast.Le
+  | Ast.Gt -> Tast.Gt
+  | Ast.Ge -> Tast.Ge
+;;
+
+let infer_uop = function Ast.Neg -> Tast.Neg | Ast.Not -> Tast.Not
+
 let instantiate (scheme : Tast.typeScheme) : Tast.tau =
   let rec aux : Tast.typeScheme -> Sub.subst * Tast.tau = function
     | Tast.Tau tp -> Sub.id (), tp
@@ -108,7 +126,7 @@ let generalize (env : Tast.typeScheme TE.environment) (tau : Tast.tau)
 let is_syntactic_values (e : Tast.expr) : bool =
   match e with
   | Int _ | Bool _ | Var _ | Abs _ -> true
-  | App _ | Let _ -> false
+  | BinOp _ | UnOp _ | App _ | Let _ -> false
 ;;
 
 let rec infer_type env (expr : Ast.expr) : Sub.subst * Tast.tau * Tast.expr =
@@ -138,27 +156,58 @@ let rec infer_type env (expr : Ast.expr) : Sub.subst * Tast.tau * Tast.expr =
     let s5 = s4 @@@ s3 in
     let tp = Sub.apply s5 alpha in
     s5, tp, Tast.App { e1; e2; tp }
+  (* TODO: If more than zero arguments to let binding, then make it function
+     type *)
   | Let { id = Ident { id }; vs; e1; e2 } ->
-    let s1, tau1, e1 = infer_type env e1 in
+    let e1' =
+      List.fold_left (fun acc x -> Ast.Abs { x; e = acc }) e1 (List.rev vs)
+    in
+    let s1, tau1, e1 = infer_type env e1' in
     let env' = Sub.apply_env s1 env in
     let clos =
       if is_syntactic_values e1 then generalize env' tau1 else Tast.Tau tau1
     in
     let env'' = TE.insert id clos env' in
-    let tvs = List.map (fun (Ast.Ident { id }) -> id) vs in
-    let env''' =
-      List.fold_left
-        (fun envacc id ->
-           let t = fresh_tyVar () in
-           TE.insert id (Tast.Tau t) envacc)
-        env''
-        tvs
-    in
-    let vs =
-      List.fold_left (fun acc id -> acc @ [ Tast.Ident { id } ]) [] tvs
-    in
-    let s2, tau2, e2 = infer_type (Sub.apply_env s1 env''') e2 in
-    s2 @@@ s1, tau2, Tast.Let { id = Ident { id }; vs; e1; e2; tp = tau2 }
+    let s2, tau2, e2 = infer_type (Sub.apply_env s1 env'') e2 in
+    s2 @@@ s1, tau2, Tast.Let { id = Ident { id }; e1; e2; tp = tau2 }
+  | BinOp { l; op; r } ->
+    let s1, ltp, l = infer_type env l in
+    let s2, rtp, r = infer_type (Sub.apply_env s1 env) r in
+    let s3 = s2 @@@ s1 in
+    let op = infer_bop op in
+    (match op with
+     | Tast.Plus | Tast.Minus | Tast.Mul | Tast.Div | Tast.Rem ->
+       let s4 = unify (Sub.apply s3 ltp) (Tast.TyCon Tast.Int) in
+       let s5 = s4 @@@ s3 in
+       let s6 = unify (Sub.apply s5 rtp) (Tast.TyCon Tast.Int) in
+       let tp = Tast.TyCon Tast.Int in
+       s6 @@@ s5, tp, Tast.BinOp { l; op; r; tp }
+     | Tast.Lt | Tast.Le | Tast.Gt | Tast.Ge ->
+       let s4 = unify (Sub.apply s3 ltp) (Tast.TyCon Tast.Int) in
+       let s5 = s4 @@@ s3 in
+       let s6 = unify (Sub.apply s5 rtp) (Tast.TyCon Tast.Int) in
+       let tp = Tast.TyCon Tast.Bool in
+       s6 @@@ s5, tp, Tast.BinOp { l; op; r; tp }
+     | Tast.And | Tast.Or ->
+       let s4 = unify (Sub.apply s3 ltp) (Tast.TyCon Tast.Bool) in
+       let s5 = s4 @@@ s3 in
+       let s6 = unify (Sub.apply s5 rtp) (Tast.TyCon Tast.Bool) in
+       let tp = Tast.TyCon Tast.Bool in
+       s6 @@@ s5, tp, Tast.BinOp { l; op; r; tp }
+     | Tast.Eq | Tast.Neq ->
+       let s4 = unify (Sub.apply s3 ltp) rtp in
+       let tp = Tast.TyCon Tast.Bool in
+       s4 @@@ s3, tp, Tast.BinOp { l; op; r; tp })
+  | UnOp { op; expr } ->
+    let op = infer_uop op in
+    let s1, tp, expr = infer_type env expr in
+    (match op with
+     | Tast.Neg ->
+       let s2 = unify (Sub.apply s1 tp) (Tast.TyCon Tast.Int) in
+       s2 @@@ s1, tp, Tast.UnOp { op; expr; tp }
+     | Tast.Not ->
+       let s2 = unify (Sub.apply s1 tp) (Tast.TyCon Tast.Bool) in
+       s2 @@@ s1, tp, Tast.UnOp { op; expr; tp })
 ;;
 
 let infer_program (expr : Ast.program) : Tast.program =
