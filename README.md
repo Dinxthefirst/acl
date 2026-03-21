@@ -82,4 +82,7 @@ Then all dune commands are avaible to use
 
 ## Further Work
 - Recursive types (`let rec`)
+    - mu a . t (replaces instances of a in t with t)
 - Lists
+- Lambda abstraction with more than one argument
+- If-then-else
