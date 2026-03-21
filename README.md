@@ -32,7 +32,7 @@ which is the function which adds two integers together.
 The function can also have the variables of the lambda abstraction as arguments
 ```
 let inc' x = x + 1 in inc'
-``
+```
 which is equivalent to `inc`.
 
 Application is of the form
