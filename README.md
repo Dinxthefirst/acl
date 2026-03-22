@@ -122,6 +122,8 @@ Then all dune commands are avaible to use
 - If-then-else
 
 ## Based on
+
 [Operational Semantics and Polymorphic Type Inference](https://era.ed.ac.uk/items/cabb5760-1575-40be-83cd-0de78cec344e/full)
+
 [A Machine-Oriented Logic Based on the Resolution Principle](https://dl.acm.org/doi/10.1145/321250.321253)
 
