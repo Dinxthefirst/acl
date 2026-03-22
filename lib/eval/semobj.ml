@@ -9,23 +9,27 @@ type basval =
   | Bool of bool
   | Done
 
-and value =
+type value =
   | Base of basval
-  | Closure of closure
+  | Closure of
+      { x : Tast.ident
+      ; e : Tast.expr
+      ; env : value E.environment
+      }
+  | List of { vs : value list }
 
-and closure =
-  { x : Tast.ident
-  ; e : Tast.expr
-  ; env : value E.environment
-  }
-
-and result =
+type result =
   | Value of value
   | Wrong of string
 
+let string_of_basval = function
+  | Int int -> Int64.to_string int
+  | Bool bool -> string_of_bool bool
+  | Done -> "done"
+;;
+
 let rec string_of_value = function
-  | Base (Int int) -> Int64.to_string int
-  | Base (Bool bool) -> string_of_bool bool
+  | Base b -> string_of_basval b
   | Closure { x = Ident { id = x }; e; env } ->
     "Closure { x = "
     ^ x
@@ -34,7 +38,8 @@ let rec string_of_value = function
     ^ "; "
     ^ E.string_of_env string_of_value env
     ^ " }"
-  | Base Done -> "done"
+  | List { vs } ->
+    "[" ^ String.concat " ; " (List.map string_of_value vs) ^ "]"
 ;;
 
 let string_of_result = function

@@ -28,6 +28,7 @@ let rec unify (tau1 : Tast.tau) (tau2 : Tast.tau) : Sub.subst =
     let s1 = unify intp1 intp2 in
     let s2 = unify (Sub.apply s1 outtp1) (Sub.apply s1 outtp2) in
     s2 @@@ s1
+  | TList { tp = tp1 }, TList { tp = tp2 } -> unify tp1 tp2
   | _ ->
     failwith
       (Printf.sprintf
@@ -40,6 +41,7 @@ and occurs (tau : Tast.tau) (alpha : Tast.tyVar) : bool =
   | TyCon _ -> false
   | TyVar a -> a = alpha
   | TFunc { intp; outtp } -> occurs intp alpha || occurs outtp alpha
+  | TList { tp } -> occurs tp alpha
 ;;
 
 let infer_bop = function
@@ -89,6 +91,7 @@ let free_tyVar_of_tau (tau : Tast.tau) : TyVarSet.t =
     | Tast.TyVar var -> TyVarSet.add var acc
     | Tast.TFunc { intp; outtp } ->
       TyVarSet.union (aux acc intp) (aux acc outtp)
+    | Tast.TList { tp } -> aux acc tp
   in
   aux TyVarSet.empty tau
 ;;
@@ -139,10 +142,13 @@ let rec infer_type env (expr : Ast.expr) : Sub.subst * Tast.tau * Tast.expr =
     ( Sub.id ()
     , instantiation
     , Tast.Var { id = Ident { id }; tp = instantiation } )
-  | Abs { x = Ident { id = xid; _ }; e } ->
+  | Abs { x = Ident { id = xid; _ } ; vs; e } ->
+    let e' = 
+      List.fold_left (fun acc x -> Ast.Abs {x; vs = []; e = acc}) e (List.rev vs)
+    in
     let t = fresh_tyVar () in
     let env' = TE.insert xid (Tast.Tau t) env in
-    let s1, tau, e = infer_type env' e in
+    let s1, tau, e = infer_type env' e' in
     let tp = Tast.TFunc { intp = Sub.apply s1 t; outtp = tau } in
     s1, tp, Tast.Abs { x = Ident { id = xid }; e; tp }
   | App { e1; e2 } ->
@@ -160,7 +166,7 @@ let rec infer_type env (expr : Ast.expr) : Sub.subst * Tast.tau * Tast.expr =
      type *)
   | Let { id = Ident { id }; vs; e1; e2 } ->
     let e1' =
-      List.fold_left (fun acc x -> Ast.Abs { x; e = acc }) e1 (List.rev vs)
+      List.fold_left (fun acc x -> Ast.Abs { x; vs = []; e = acc }) e1 (List.rev vs)
     in
     let s1, tau1, e1 = infer_type env e1' in
     let env' = Sub.apply_env s1 env in
@@ -211,7 +217,7 @@ let rec infer_type env (expr : Ast.expr) : Sub.subst * Tast.tau * Tast.expr =
 ;;
 
 let infer_program (expr : Ast.program) : Tast.program =
-  let env = TE.init_env () in
+  let env = Stdlib.stdlib () in
   c := 0;
   let s, _, texpr = infer_type env expr in
   Sub.apply_expr s texpr

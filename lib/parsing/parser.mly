@@ -14,12 +14,17 @@
 %token NOT OR AND 
 %token EQ NEQ LT LE GT GE
 
+%token SEQ ";"
 
 %token LPAREN "(" RPAREN ")"
 
-%token ARROW "->"
+%token LAMBDA "\\" ARROW "->"
 
 %token LET IN
+
+%token CONS "::"
+%token LBRACKET "["
+%token RBRACKET "]"
 
 
 %start <program> prog
@@ -59,6 +64,12 @@
 | MINUS {Neg}
 | NOT {Not}
 
+cons: 
+| "[" lst = separated_list(";", expr) "]" {
+  List.fold_right (fun e2 acc -> App {e1 = App {e1 = Var (Ident {id = "cons"}); e2}; e2 = acc}) 
+  lst 
+  (Var (Ident { id = "nil" }))}
+
 list_ident:
   | {[]}
   | id = ident ids = list_ident {id :: ids}
@@ -68,13 +79,15 @@ atomic:
 | i = INT_LIT {Int {int = i}}
 | b = BOOL_LIT {Bool {bool = b}}
 | var = ident {Var (var)}
+| cons {$1}
 
 app:
 | e1 = app e2 = atomic {App {e1; e2}}
+| l = app "::" e2 = atomic {App {e1 = App {e1 = Var (Ident {id = "cons"} ); e2 = l}; e2}}
 | atomic {$1}
 
 expr: 
-| x = ident "->" e = expr {Abs {x; e}}
+| "\\" x = ident vs = list_ident "->" e = expr {Abs {x; vs; e}}
 | LET id = ident vs = list_ident EQ e1 = expr IN e2 = expr %prec LET {Let {id; vs; e1; e2}}
 | l = expr op = binop r = expr {BinOp {l; op; r}}
 | op = unop expr = expr %prec UNOP {UnOp {op; expr}}

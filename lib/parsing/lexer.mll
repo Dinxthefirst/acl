@@ -32,7 +32,12 @@ rule token = parse
 | "let" {LET}
 | "in" {IN}
 (* | "rec" {REC} *)
+| "\\" {LAMBDA}
 | "->" {ARROW}
+| "::" {CONS}
+| "[" {LBRACKET}
+| "]" {RBRACKET}
+| ";" {SEQ}
 | boolean as b {BOOL_LIT (bool_of_string b)}
 | integer as i {INT_LIT (Int64.of_string i) }
 | id as i {IDENT i} 

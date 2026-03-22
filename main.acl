@@ -1,3 +1,0 @@
-let add1 = x -> y -> x + y in 
-let add2 x y = x + y in
-add2 

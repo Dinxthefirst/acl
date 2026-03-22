@@ -11,7 +11,10 @@ let value_keyword_style = PBox.Style.fg_color PBox.Style.Green
 let make_wrong e = PBox.line_with_style wrong_style e
 let make_binop op = PBox.line_with_style binop_style op
 let make_value e = PBox.line_with_style value_keyword_style e
-let make_type t = PBox.line_with_style (PBox.Style.fg_color PBox.Style.Cyan) t
+
+let make_type t =
+  PBox.line_with_style (PBox.Style.fg_color PBox.Style.Cyan) t
+;;
 
 let make_binding s =
   PBox.line_with_style (PBox.Style.fg_color PBox.Style.Magenta) s
@@ -49,6 +52,8 @@ let rec value_derivation_node (v : SO.value) =
     PBox.tree
       (make_value "Closure")
       [ ident_info x; tast_env_derivation_node e; env_derivation_node env ]
+  | List { vs } ->
+    PBox.tree (make_value "List") (List.map value_derivation_node vs)
 
 and binding s (v : SO.value) =
   PBox.hlist

@@ -12,6 +12,11 @@ let rec string_of_type (tp : Tast.tau) : string =
      | _ -> string_of_type intp)
     ^ " -> "
     ^ string_of_type outtp
+  | TList { tp } ->
+    (match tp with
+     | TList _ | TFunc _ -> "(" ^ string_of_type tp ^ ")"
+     | _ -> string_of_type tp)
+    ^ " list"
 ;;
 
 let rec string_of_scheme (scheme : Tast.typeScheme) : string =

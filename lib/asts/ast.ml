@@ -27,6 +27,7 @@ type expr =
   | Bool of { bool : bool }
   | Abs of
       { x : ident
+      ; vs : ident list
       ; e : expr
       }
   | App of

@@ -19,11 +19,12 @@ let add_subst (sub : subst) (tyvar : Tast.tau) (tau : Tast.tau) : subst =
 
 let rec apply (sub : subst) (tau : Tast.tau) : Tast.tau =
   match tau with
-  | Tast.TyVar _ ->
+  | TyVar _ ->
     (match SubstMap.find_opt tau sub with Some t -> t | None -> tau)
-  | Tast.TFunc { intp; outtp } ->
-    Tast.TFunc { intp = apply sub intp; outtp = apply sub outtp }
-  | Tast.TyCon tycon -> Tast.TyCon tycon
+  | TyCon tycon -> TyCon tycon
+  | TFunc { intp; outtp } ->
+    TFunc { intp = apply sub intp; outtp = apply sub outtp }
+  | TList { tp } -> TList { tp = apply sub tp }
 ;;
 
 let rec apply_expr (sub : subst) (expr : Tast.expr) : Tast.expr =

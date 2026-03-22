@@ -13,6 +13,7 @@ type tau =
       { intp : tau
       ; outtp : tau
       }
+  | TList of { tp : tau }
 
 type typeScheme =
   | Tau of tau
